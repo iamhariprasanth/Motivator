@@ -7,7 +7,7 @@ import { rateLimit, RateLimitConfig } from '@/lib/ratelimit';
 export async function POST(req: NextRequest) {
   try {
     // Rate limiting: Prevent API abuse and excessive OpenAI costs
-    const ip = req.ip ?? req.headers.get('x-forwarded-for') ?? 'anonymous';
+    const ip = req.headers.get('x-forwarded-for') ?? req.headers.get('x-real-ip') ?? 'anonymous';
     const { success, remaining } = await rateLimit(
       `motivate:${ip}`,
       RateLimitConfig.MOTIVATE.limit,

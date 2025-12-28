@@ -79,12 +79,12 @@ export default function HistoryPage() {
             <p className="text-sm text-gray-600 mb-1">Most Common Emotion</p>
             <p className="text-2xl font-bold text-blue-600">
               {sessions.length > 0
-                ? Object.entries(
+                ? (Object.entries(
                     sessions.reduce((acc, s) => {
                       acc[s.sentiment] = (acc[s.sentiment] || 0) + 1;
                       return acc;
                     }, {} as Record<string, number>)
-                  ).sort((a, b) => b[1] - a[1])[0]?.[0] || 'N/A'
+                  ).sort((a, b) => (b[1] as number) - (a[1] as number))[0]?.[0] as string) || 'N/A'
                 : 'N/A'}
             </p>
           </div>
