@@ -1,10 +1,37 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend';
+import DOMPurify from 'isomorphic-dompurify';
+import { rateLimit, RateLimitConfig } from '@/lib/ratelimit';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(req: NextRequest) {
   try {
+    // Rate limiting: Prevent email spam
+    const ip = req.ip ?? req.headers.get('x-forwarded-for') ?? 'anonymous';
+    const { success, remaining } = await rateLimit(
+      `email:${ip}`,
+      RateLimitConfig.EMAIL.limit,
+      RateLimitConfig.EMAIL.windowMs
+    );
+
+    if (!success) {
+      return NextResponse.json(
+        {
+          error: 'Rate limit exceeded',
+          message: 'Too many email requests. Please try again in a minute.',
+          retryAfter: 60
+        },
+        {
+          status: 429,
+          headers: {
+            'Retry-After': '60',
+            'X-RateLimit-Remaining': '0'
+          }
+        }
+      );
+    }
+
     const { email, motivation } = await req.json();
 
     // Validate input
@@ -34,6 +61,23 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Sanitize all user-generated content to prevent XSS attacks
+    const sanitizedQuote = motivation.parsed.quote
+      ? DOMPurify.sanitize(motivation.parsed.quote, { ALLOWED_TAGS: [] })
+      : '';
+    const sanitizedMovieScene = motivation.parsed.movieScene
+      ? DOMPurify.sanitize(motivation.parsed.movieScene, { ALLOWED_TAGS: [] })
+      : '';
+    const sanitizedDeepMeaning = motivation.parsed.deepMeaning
+      ? DOMPurify.sanitize(motivation.parsed.deepMeaning, { ALLOWED_TAGS: [] })
+      : '';
+    const sanitizedActionablePath = motivation.parsed.actionablePath
+      ? DOMPurify.sanitize(motivation.parsed.actionablePath, { ALLOWED_TAGS: [] })
+      : '';
+    const sanitizedAffirmation = motivation.parsed.affirmation
+      ? DOMPurify.sanitize(motivation.parsed.affirmation, { ALLOWED_TAGS: [] })
+      : '';
+
     // Send email using Resend
     const { data, error } = await resend.emails.send({
       from: process.env.EMAIL_FROM || 'My Brain doctor <onboarding@resend.dev>',
@@ -62,37 +106,37 @@ export async function POST(req: NextRequest) {
               <p>Powered by Movie Wisdom</p>
             </div>
             <div class="content">
-              ${motivation.parsed.quote ? `
+              ${sanitizedQuote ? `
                 <div class="section">
                   <div class="section-title"><span>💬</span> Inspiring Quote</div>
-                  <div class="section-content quote">${motivation.parsed.quote}</div>
+                  <div class="section-content quote">${sanitizedQuote}</div>
                 </div>
               ` : ''}
 
-              ${motivation.parsed.movieScene ? `
+              ${sanitizedMovieScene ? `
                 <div class="section">
                   <div class="section-title"><span>🎬</span> Movie Scene</div>
-                  <div class="section-content">${motivation.parsed.movieScene}</div>
+                  <div class="section-content">${sanitizedMovieScene}</div>
                 </div>
               ` : ''}
 
-              ${motivation.parsed.deepMeaning ? `
+              ${sanitizedDeepMeaning ? `
                 <div class="section">
                   <div class="section-title"><span>💡</span> Deep Meaning</div>
-                  <div class="section-content">${motivation.parsed.deepMeaning}</div>
+                  <div class="section-content">${sanitizedDeepMeaning}</div>
                 </div>
               ` : ''}
 
-              ${motivation.parsed.actionablePath ? `
+              ${sanitizedActionablePath ? `
                 <div class="section">
                   <div class="section-title"><span>✨</span> Actionable Path</div>
-                  <div class="section-content">${motivation.parsed.actionablePath}</div>
+                  <div class="section-content">${sanitizedActionablePath}</div>
                 </div>
               ` : ''}
 
-              ${motivation.parsed.affirmation ? `
+              ${sanitizedAffirmation ? `
                 <div class="affirmation">
-                  🌟 ${motivation.parsed.affirmation}
+                  🌟 ${sanitizedAffirmation}
                 </div>
               ` : ''}
             </div>

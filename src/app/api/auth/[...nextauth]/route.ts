@@ -45,6 +45,8 @@ export const authOptions: NextAuthOptions = {
   ],
   session: {
     strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60, // 30 days
+    updateAge: 24 * 60 * 60,    // Update session every 24 hours
   },
   pages: {
     signIn: "/login",
@@ -63,7 +65,13 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
   },
-  secret: process.env.NEXTAUTH_SECRET,
+  secret: process.env.NEXTAUTH_SECRET || (() => {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('NEXTAUTH_SECRET must be set in production environment');
+    }
+    console.warn('⚠️  Using default NEXTAUTH_SECRET for development only');
+    return 'development-secret-change-in-production';
+  })(),
 };
 
 const handler = NextAuth(authOptions);

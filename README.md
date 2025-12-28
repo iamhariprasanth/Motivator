@@ -110,6 +110,9 @@ See [docs/PROJECT_STRUCTURE.md](docs/PROJECT_STRUCTURE.md) for detailed organiza
 - [Project Structure](docs/PROJECT_STRUCTURE.md) - Code organization
 - [Testing Guide](docs/TEST_FLOW.md) - How to test the app
 - [Development Notes](docs/CLAUDE.md) - Claude Code development log
+- [Security Audit](docs/SECURITY_AUDIT.md) - Security vulnerability analysis
+- [Security Fixes](docs/SECURITY_FIXES.md) - Implemented security protections
+- [SEO Guide](docs/SEO_GUIDE.md) - Search engine optimization strategy
 
 ## 🎯 Key Pages
 

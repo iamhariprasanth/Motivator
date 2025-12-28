@@ -2,15 +2,49 @@ import { NextRequest, NextResponse } from 'next/server';
 import { generateMotivationalResponse } from '@/lib/ai/ultraDeepMode';
 import { parseAIResponse, validateResponse } from '@/lib/ai/validator';
 import { prisma } from '@/lib/prisma';
+import { rateLimit, RateLimitConfig } from '@/lib/ratelimit';
 
 export async function POST(req: NextRequest) {
   try {
+    // Rate limiting: Prevent API abuse and excessive OpenAI costs
+    const ip = req.ip ?? req.headers.get('x-forwarded-for') ?? 'anonymous';
+    const { success, remaining } = await rateLimit(
+      `motivate:${ip}`,
+      RateLimitConfig.MOTIVATE.limit,
+      RateLimitConfig.MOTIVATE.windowMs
+    );
+
+    if (!success) {
+      return NextResponse.json(
+        {
+          error: 'Rate limit exceeded',
+          message: 'Too many requests. Please try again in a minute.',
+          retryAfter: 60
+        },
+        {
+          status: 429,
+          headers: {
+            'Retry-After': '60',
+            'X-RateLimit-Remaining': '0'
+          }
+        }
+      );
+    }
+
     const { situation, userId } = await req.json();
 
     // Validate input
     if (!situation || situation.trim().length < 10) {
       return NextResponse.json(
         { error: 'Please provide a detailed situation (at least 10 characters)' },
+        { status: 400 }
+      );
+    }
+
+    // Validate maximum length to prevent abuse
+    if (situation.length > 5000) {
+      return NextResponse.json(
+        { error: 'Situation is too long (maximum 5000 characters)' },
         { status: 400 }
       );
     }
