@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend';
-import DOMPurify from 'isomorphic-dompurify';
+import xss from 'xss';
 import { rateLimit, RateLimitConfig } from '@/lib/ratelimit';
 
 // Lazy-load Resend client to avoid build-time errors
@@ -73,20 +73,27 @@ export async function POST(req: NextRequest) {
     }
 
     // Sanitize all user-generated content to prevent XSS attacks
+    // Using xss library with strict options (no HTML tags allowed)
+    const xssOptions = {
+      whiteList: {}, // No HTML tags allowed
+      stripIgnoreTag: true,
+      stripIgnoreTagBody: ['script', 'style']
+    };
+
     const sanitizedQuote = motivation.parsed.quote
-      ? DOMPurify.sanitize(motivation.parsed.quote, { ALLOWED_TAGS: [] })
+      ? xss(motivation.parsed.quote, xssOptions)
       : '';
     const sanitizedMovieScene = motivation.parsed.movieScene
-      ? DOMPurify.sanitize(motivation.parsed.movieScene, { ALLOWED_TAGS: [] })
+      ? xss(motivation.parsed.movieScene, xssOptions)
       : '';
     const sanitizedDeepMeaning = motivation.parsed.deepMeaning
-      ? DOMPurify.sanitize(motivation.parsed.deepMeaning, { ALLOWED_TAGS: [] })
+      ? xss(motivation.parsed.deepMeaning, xssOptions)
       : '';
     const sanitizedActionablePath = motivation.parsed.actionablePath
-      ? DOMPurify.sanitize(motivation.parsed.actionablePath, { ALLOWED_TAGS: [] })
+      ? xss(motivation.parsed.actionablePath, xssOptions)
       : '';
     const sanitizedAffirmation = motivation.parsed.affirmation
-      ? DOMPurify.sanitize(motivation.parsed.affirmation, { ALLOWED_TAGS: [] })
+      ? xss(motivation.parsed.affirmation, xssOptions)
       : '';
 
     // Send email using Resend
