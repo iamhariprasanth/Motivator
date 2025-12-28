@@ -49,6 +49,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Validate that motivation.parsed exists
+    if (!motivation.parsed) {
+      return NextResponse.json(
+        { error: 'Invalid motivation content: missing parsed property' },
+        { status: 400 }
+      );
+    }
+
     // Check if RESEND_API_KEY is configured
     if (!process.env.RESEND_API_KEY) {
       console.warn('RESEND_API_KEY not configured - email not sent');
