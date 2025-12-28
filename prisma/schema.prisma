@@ -1,0 +1,57 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  passwordHash  String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  sessions      Session[]
+
+  @@map("users")
+}
+
+model Session {
+  id                  String   @id @default(cuid())
+  userId              String
+  situation           String   @db.Text
+  sentiment           String   // despair, anxiety, anger, etc.
+  aiResponse          String   @db.Text
+  movieScene          String
+  quote               String   @db.Text
+  deepMeaning         String   @db.Text
+  actionablePath      String   @db.Text
+  affirmation         String   @db.Text
+  relevancyScore      Int?     // 1-10
+  actionTaken         Boolean  @default(false)
+  validationScore     Float?   // From AI validator
+  createdAt           DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("user_sessions")
+}
+
+model MovieScene {
+  id              String   @id @default(cuid())
+  title           String
+  movieName       String
+  category        String   // career, fear, identity, relationships, transformation
+  sceneDescription String  @db.Text
+  emotionalArc    String
+  keywords        String[] // For matching
+  sentiment       String[] // despair, anxiety, etc.
+
+  @@index([category])
+  @@index([sentiment])
+  @@map("movie_scenes")
+}

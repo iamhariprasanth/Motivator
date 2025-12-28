@@ -1,0 +1,29 @@
+# My Brain Doctor - Robots.txt
+# https://mybraindoctor.com/robots.txt
+
+User-agent: *
+Allow: /
+Allow: /demo
+Allow: /signup
+Allow: /login
+
+# Disallow private/authenticated pages
+Disallow: /dashboard
+Disallow: /history
+Disallow: /api/
+
+# Sitemap
+Sitemap: https://mybraindoctor.com/sitemap.xml
+
+# Crawl-delay (optional, prevents server overload)
+Crawl-delay: 1
+
+# Google-specific
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 0
+
+# Bing-specific
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 1
